@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Defs>
+  <MainButtonDef>
+    <defName>RamazonButton</defName>
+    <label>Ramazon</label>
+    <description>Compre e venda items pelo Ramazon.</description>
+    <buttonVisible>true</buttonVisible>
+    <order>499</order>
+    <hotKey>Misc1</hotKey>
+    <tabWindowClass>Ramazon.MainTabWindow_Ramazon</tabWindowClass>
+    <iconPath>UI/Icons/Ramazon</iconPath> <!-- opcional; se não tiver, some -->
+  </MainButtonDef>
+</Defs>

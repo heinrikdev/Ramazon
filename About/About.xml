@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ModMetaData>
+  <name>Ramazon – Buy Anything</name>
+  <author>HeinrikDev</author>
+  <packageId>heinrikDev.ramazon</packageId>
+  <supportedVersions>
+    <li>1.5</li>
+    <li>1.6</li>
+  </supportedVersions>
+  <description>
+    Cansado de esperar dias por uma caravana comercial?  
+    Seus colonos não têm tempo para lidar com comerciantes lerdos?  
+
+    Com **Ramazon™** você compra QUALQUER item do jogo instantaneamente, direto do conforto da sua colônia.  
+    ✦ Preço baseado no valor de mercado × multiplicador configurável.  
+    ✦ Sistema de carrinho de compras com interface intuitiva.  
+    ✦ Os itens caem direto no local de drop trade.  
+
+    Por uma pequena taxa, até mesmo o impossível vira entrega expressa.  
+    Ramazon – porque o tempo é dinheiro, e o seu império merece nada menos que **luxo instantâneo**.
+  </description>
+  <modIconPath>About/Preview.png</modIconPath>
+</ModMetaData>

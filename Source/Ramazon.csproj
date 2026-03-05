@@ -1,0 +1,56 @@
+<Project ToolsVersion="15.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+    <Configuration Condition=" '$(Configuration)' == '' ">Release</Configuration>
+    <Platform>AnyCPU</Platform>
+
+    <OutputType>Library</OutputType>                <!-- Gera DLL -->
+    <TargetFrameworkVersion>v4.7.2</TargetFrameworkVersion>
+    <LangVersion>latest</LangVersion>
+    <Optimize>true</Optimize>
+
+    <!-- Saída direto na pasta Assemblies do mod -->
+    <OutputPath>../Assemblies/</OutputPath>
+    <AssemblyName>Ramazon</AssemblyName>
+    <RootNamespace>Ramazon</RootNamespace>
+  </PropertyGroup>
+
+  <!-- Se preferir manter tudo por linha de comando, pode remover este bloco e passar FrameworkPathOverride no msbuild -->
+  <Import Project="Directory.Build.props" Condition="Exists('Directory.Build.props')" />
+
+  <ItemGroup>
+    <!-- BCL -->
+    <Reference Include="System" />
+    <Reference Include="System.Core" />
+    <Reference Include="mscorlib" />
+
+    <!-- netstandard 2.1 (use o do Unity/RimWorld) -->
+    <Reference Include="netstandard">
+      <HintPath>/Users/macbook/Library/Application Support/Steam/steamapps/common/RimWorld/RimWorldMac.app/Contents/Resources/Data/Managed/netstandard.dll</HintPath>
+    </Reference>
+
+    <!-- RimWorld/Unity -->
+    <Reference Include="Assembly-CSharp">
+      <HintPath>/Users/macbook/Library/Application Support/Steam/steamapps/common/RimWorld/RimWorldMac.app/Contents/Resources/Data/Managed/Assembly-CSharp.dll</HintPath>
+    </Reference>
+
+    <Reference Include="UnityEngine">
+      <HintPath>/Users/macbook/Library/Application Support/Steam/steamapps/common/RimWorld/RimWorldMac.app/Contents/Resources/Data/Managed/UnityEngine.dll</HintPath>
+    </Reference>
+    <Reference Include="UnityEngine.CoreModule">
+      <HintPath>/Users/macbook/Library/Application Support/Steam/steamapps/common/RimWorld/RimWorldMac.app/Contents/Resources/Data/Managed/UnityEngine.CoreModule.dll</HintPath>
+    </Reference>
+    <Reference Include="UnityEngine.IMGUIModule">
+      <HintPath>/Users/macbook/Library/Application Support/Steam/steamapps/common/RimWorld/RimWorldMac.app/Contents/Resources/Data/Managed/UnityEngine.IMGUIModule.dll</HintPath>
+    </Reference>
+    <Reference Include="UnityEngine.TextRenderingModule">
+      <HintPath>/Users/macbook/Library/Application Support/Steam/steamapps/common/RimWorld/RimWorldMac.app/Contents/Resources/Data/Managed/UnityEngine.TextRenderingModule.dll</HintPath>
+    </Reference>
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- seus .cs (ajuste se tiver subpastas) -->
+    <Compile Include="*.cs" />
+  </ItemGroup>
+
+  <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
+</Project>
