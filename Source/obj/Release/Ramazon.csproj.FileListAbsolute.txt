@@ -1,5 +1,5 @@
 /Users/macbook/Library/Application Support/Steam/steamapps/common/RimWorld/RimWorldMac.app/Mods/Ramazon/Source/obj/Release/Ramazon.csproj.AssemblyReference.cache
 /Users/macbook/Library/Application Support/Steam/steamapps/common/RimWorld/RimWorldMac.app/Mods/Ramazon/Source/obj/Release/Ramazon.csproj.CoreCompileInputs.cache
 /Users/macbook/Library/Application Support/Steam/steamapps/common/RimWorld/RimWorldMac.app/Mods/Ramazon/Assemblies/Ramazon.dll
-/Users/macbook/Library/Application Support/Steam/steamapps/common/RimWorld/RimWorldMac.app/Mods/Ramazon/Source/obj/Release/Ramazon.csproj.CopyComplete
 /Users/macbook/Library/Application Support/Steam/steamapps/common/RimWorld/RimWorldMac.app/Mods/Ramazon/Source/obj/Release/Ramazon.dll
+/Users/macbook/Library/Application Support/Steam/steamapps/common/RimWorld/RimWorldMac.app/Mods/Ramazon/Source/obj/Release/Ramazon.csproj.Up2Date

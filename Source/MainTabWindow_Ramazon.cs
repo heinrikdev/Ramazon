@@ -297,6 +297,8 @@ namespace Ramazon
             var name = (def.label ?? def.defName).CapitalizeFirst();
             Text.Font = GameFont.Small; Text.Anchor = TextAnchor.UpperLeft;
             Widgets.Label(nameRect, name.Truncate(nameRect.width));
+            TooltipHandler.TipRegion(cell, name + (!string.IsNullOrEmpty(def.description) ? "\n\n" + def.description : ""));
+            Widgets.InfoCardButton(cell.xMax - 50f, cell.y + 4f, def);
 
             var categoryRect = new Rect(iconRect.xMax + 8, cell.y + 30, 80, 16);
             GUI.color = GetCategoryColor(def);
@@ -347,7 +349,10 @@ namespace Ramazon
 
             var nameRect = new Rect(iconRect.xMax + 8, cell.y + 8, cell.width - 70, 18);
             Text.Font = GameFont.Small;
-            Widgets.Label(nameRect, (def.label ?? def.defName).CapitalizeFirst().Truncate(nameRect.width));
+            var sellItemName = (def.label ?? def.defName).CapitalizeFirst();
+            Widgets.Label(nameRect, sellItemName.Truncate(nameRect.width));
+            TooltipHandler.TipRegion(cell, sellItemName + (!string.IsNullOrEmpty(def.description) ? "\n\n" + def.description : ""));
+            Widgets.InfoCardButton(cell.xMax - 26f, cell.y + 4f, def);
 
             float unitMV = Math.Max(0f, def.BaseMarketValue);
             float receivePct = (100f - st.sellTaxPercent) / 100f;
