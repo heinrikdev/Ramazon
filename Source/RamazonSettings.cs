@@ -13,8 +13,11 @@ namespace Ramazon
         public float sellTaxPercent = 20f;
 
         // Stuffables (opcional)
-        public bool showStuffables = false; // off por padrão
+        public bool showStuffables = false;
         public string defaultStuffDefName = "Steel";
+
+        // Animais
+        public bool allowAnimals = false;
 
         public override void ExposeData()
         {
@@ -22,6 +25,7 @@ namespace Ramazon
             Scribe_Values.Look(ref sellTaxPercent, "sellTaxPercent", 20f);
             Scribe_Values.Look(ref showStuffables, "showStuffables", false);
             Scribe_Values.Look(ref defaultStuffDefName, "defaultStuffDefName", "Steel");
+            Scribe_Values.Look(ref allowAnimals, "allowAnimals", false);
             base.ExposeData();
         }
 
@@ -53,6 +57,13 @@ namespace Ramazon
                 "Allow stuffable items (experimental)",
                 ref showStuffables,
                 "If enabled, items made from stuff (apparel/weapons/buildables) will be spawned using a default stuff and cost will be roughly estimated."
+            );
+
+            list.GapLine(6f);
+            list.CheckboxLabeled(
+                "Allow buying animals",
+                ref allowAnimals,
+                "If enabled, an Animals tab appears in the catalog. Purchased animals arrive tamed and join your colony."
             );
 
             if (showStuffables)
