@@ -427,7 +427,7 @@ namespace Ramazon
             Widgets.Label(nameRect, sellItemName.Truncate(nameRect.width));
             TooltipHandler.TipRegion(cell, sellItemName + (!string.IsNullOrEmpty(def.description) ? "\n\n" + def.description : ""));
 
-            float unitMV = Math.Max(0f, def.BaseMarketValue);
+            float unitMV = GetSellUnitMV(def);
             float receivePct = (100f - st.sellTaxPercent) / 100f;
 
             var stockRect = new Rect(iconRect.xMax + 8, cell.y + 28, cell.width - 100, 16);
@@ -600,7 +600,12 @@ namespace Ramazon
             // Pre-calc subtotal including animal cart
             double subtotalMV = 0;
             foreach (var kv in cart)
-                subtotalMV += (double)Math.Max(0f, kv.Key.BaseMarketValue) * kv.Value;
+            {
+                float mv = (mode == ShopMode.Sell)
+                    ? GetSellUnitMV(kv.Key)
+                    : Math.Max(0f, kv.Key.BaseMarketValue);
+                subtotalMV += (double)mv * kv.Value;
+            }
             if (mode == ShopMode.Buy && st.allowAnimals)
                 foreach (var kv in animalCart)
                     subtotalMV += (double)Math.Max(0f, kv.Key.race?.BaseMarketValue ?? 0f) * kv.Value;
@@ -618,7 +623,9 @@ namespace Ramazon
             {
                 var def = kv.Key;
                 int qty = kv.Value;
-                float unitMV = Math.Max(0f, def.BaseMarketValue);
+                float unitMV = (mode == ShopMode.Sell)
+                    ? GetSellUnitMV(def)
+                    : Math.Max(0f, def.BaseMarketValue);
 
                 var row = new Rect(viewRect.x, y, viewRect.width, 64f);
 
@@ -1073,16 +1080,31 @@ namespace Ramazon
             return spot;
         }
 
+        private const string WastepackDefName = "Wastepack";
+        private const float WastepackUnitPrice = 5f;
+
+        private static float GetSellUnitMV(ThingDef def)
+        {
+            if (def == null) return 0f;
+            if (def.defName == WastepackDefName) return WastepackUnitPrice;
+            return Math.Max(0f, def.BaseMarketValue);
+        }
+
+        private static bool IsSellableSpecial(ThingDef def)
+        {
+            return def != null && def.defName == WastepackDefName;
+        }
+
         private Dictionary<ThingDef, int> ComputeSellableCounts(Map map)
         {
             if (map?.listerThings == null) return new Dictionary<ThingDef, int>();
             var things = map.listerThings.AllThings
                 .Where(t => t?.def != null &&
                             t.def.category == ThingCategory.Item &&
-                            t.def.tradeability != Tradeability.None &&
+                            (t.def.tradeability != Tradeability.None || IsSellableSpecial(t.def)) &&
                             !t.def.IsCorpse &&
                             !(t is Pawn) &&
-                            t.def.BaseMarketValue > 0f &&
+                            (t.def.BaseMarketValue > 0f || IsSellableSpecial(t.def)) &&
                             t.Spawned &&
                             !t.Position.Fogged(map) &&
                             t.def != ThingDefOf.Silver)
