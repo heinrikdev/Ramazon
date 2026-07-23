@@ -1,0 +1,81 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<Defs>
+
+  <!-- ============ O ITEM ============ -->
+  <ThingDef ParentName="BodyPartBase">
+    <defName>Ramazon_Archolink</defName>
+    <label>archolink Ramazon</label>
+    <description>Um implante arcotecnologico que sintoniza a mente do portador com a rede do Ramazon.\n\nSem ele o portal ainda funciona, mas cego: os precos vem inflacionados, alguns itens chegam sem cotacao e o portal frequentemente materializa o produto errado.\n\nCom um colono portando o archolink, a rede responde com precisao.</description>
+    <descriptionHyperlinks>
+      <HediffDef>Ramazon_ArcholinkInstalled</HediffDef>
+    </descriptionHyperlinks>
+    <graphicData>
+      <texPath>Ramazon/Archolink</texPath>
+      <graphicClass>Graphic_Single</graphicClass>
+      <drawSize>(0.85,0.85)</drawSize>
+    </graphicData>
+    <techLevel>Ultra</techLevel>
+    <statBases>
+      <MarketValue>8000</MarketValue>
+      <Mass>0.5</Mass>
+      <WorkToMake>18000</WorkToMake>
+    </statBases>
+    <thingCategories>
+      <li>BodyPartsUltra</li>
+    </thingCategories>
+    <tradeability>Sellable</tradeability>
+    <thingSetMakerTags>
+      <li>RewardStandardCore</li>
+      <li>RewardStandardHighFreq</li>
+    </thingSetMakerTags>
+  </ThingDef>
+
+  <!-- ============ O HEDIFF (implante instalado) ============ -->
+  <HediffDef ParentName="ImplantHediffBase">
+    <defName>Ramazon_ArcholinkInstalled</defName>
+    <label>archolink Ramazon</label>
+    <labelNoun>um archolink Ramazon</labelNoun>
+    <description>Um implante arcotecnologico ligado a rede do Ramazon. Enquanto este colono estiver vivo na colonia, o portal opera com precisao: precos reais, sem itens sem cotacao e sem entregas trocadas.</description>
+    <descriptionShort>Faz o portal do Ramazon operar com precisao.</descriptionShort>
+    <spawnThingOnRemoved>Ramazon_Archolink</spawnThingOnRemoved>
+    <comps>
+      <li Class="HediffCompProperties_Disappears">
+        <disappearsAfterTicks><min>999999999</min><max>999999999</max></disappearsAfterTicks>
+        <showRemainingTime>false</showRemainingTime>
+      </li>
+    </comps>
+  </HediffDef>
+
+  <!-- ============ CIRURGIA DE INSTALACAO ============ -->
+  <RecipeDef ParentName="SurgeryInstallImplantBase">
+    <defName>Ramazon_InstallArcholink</defName>
+    <label>instalar archolink Ramazon</label>
+    <description>Instala um archolink Ramazon.</description>
+    <descriptionHyperlinks>
+      <ThingDef>Ramazon_Archolink</ThingDef>
+      <HediffDef>Ramazon_ArcholinkInstalled</HediffDef>
+    </descriptionHyperlinks>
+    <jobString>Instalando archolink Ramazon.</jobString>
+    <workAmount>2500</workAmount>
+    <ingredients>
+      <li>
+        <filter>
+          <thingDefs>
+            <li>Ramazon_Archolink</li>
+          </thingDefs>
+        </filter>
+        <count>1</count>
+      </li>
+    </ingredients>
+    <fixedIngredientFilter>
+      <thingDefs>
+        <li>Ramazon_Archolink</li>
+      </thingDefs>
+    </fixedIngredientFilter>
+    <appliedOnFixedBodyParts>
+      <li>Brain</li>
+    </appliedOnFixedBodyParts>
+    <addsHediff>Ramazon_ArcholinkInstalled</addsHediff>
+  </RecipeDef>
+
+</Defs>

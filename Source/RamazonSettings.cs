@@ -19,6 +19,10 @@ namespace Ramazon
         // Animais
         public bool allowAnimals = false;
 
+        // Venda: usar o valor REAL da instancia (material/qualidade/dano), como uma
+        // caravana. Desligado, volta ao comportamento antigo: valor base do ThingDef.
+        public bool useRealItemValue = true;
+
         public override void ExposeData()
         {
             Scribe_Values.Look(ref priceMultiplier, "priceMultiplier", 1.30f);
@@ -26,6 +30,7 @@ namespace Ramazon
             Scribe_Values.Look(ref showStuffables, "showStuffables", false);
             Scribe_Values.Look(ref defaultStuffDefName, "defaultStuffDefName", "Steel");
             Scribe_Values.Look(ref allowAnimals, "allowAnimals", false);
+            Scribe_Values.Look(ref useRealItemValue, "useRealItemValue", true);
             base.ExposeData();
         }
 
@@ -57,6 +62,18 @@ namespace Ramazon
                 "Allow stuffable items (experimental)",
                 ref showStuffables,
                 "If enabled, items made from stuff (apparel/weapons/buildables) will be spawned using a default stuff and cost will be roughly estimated."
+            );
+
+            list.GapLine(6f);
+            list.CheckboxLabeled(
+                "Preco de venda pelo valor real do item",
+                ref useRealItemValue,
+                "LIGADO (recomendado): a venda usa o valor real de cada item - material (placo, ouro...), "
+                + "qualidade (ruim ate lendaria) e dano, igual a uma caravana. Vende primeiro os itens "
+                + "mais baratos, preservando seu equipamento bom.\n\n"
+                + "DESLIGADO: comportamento antigo - paga o valor base do tipo do item, ignorando material, "
+                + "qualidade e dano (uma espada de placo lendaria vale o mesmo que uma de madeira ruim), "
+                + "e consome primeiro as pilhas maiores."
             );
 
             list.GapLine(6f);

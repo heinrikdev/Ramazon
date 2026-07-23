@@ -8,7 +8,7 @@ using Verse.Sound;
 
 namespace Ramazon
 {
-    public class MainTabWindow_Ramazon : MainTabWindow
+    public class MainTabWindow_Ramazon : Window
     {
         // UI state
         private string search = "";
@@ -63,7 +63,20 @@ namespace Ramazon
         private static readonly Color SellModeColor = new Color(0.8f, 0.4f, 0.2f, 0.8f);
         private static readonly Color CartBackgroundColor = new Color(0.1f, 0.1f, 0.15f, 0.9f);
 
-        public override Vector2 RequestedTabSize => new Vector2(1200f, 720f);
+        public override Vector2 InitialSize => new Vector2(1200f, 720f);
+
+        public MainTabWindow_Ramazon()
+        {
+            // Janela normal (aberta pelo portal), nao mais uma aba da barra inferior.
+            doCloseX = true;
+            doCloseButton = false;
+            closeOnClickedOutside = false;
+            absorbInputAroundWindow = false;
+            preventCameraMotion = false;
+            draggable = true;
+            resizeable = true;
+            forcePause = false;
+        }
 
         public override void DoWindowContents(Rect inRect)
         {
@@ -179,7 +192,7 @@ namespace Ramazon
             Widgets.DrawMenuSection(infoRect);
             var infoInner = infoRect.ContractedBy(4f);
             if (mode == ShopMode.Buy)
-                Widgets.Label(new Rect(infoInner.x, infoInner.y, infoInner.width, 22f), $"Price: {st.priceMultiplier:0.00}× market value");
+                Widgets.Label(new Rect(infoInner.x, infoInner.y, infoInner.width, 22f), $"Price: {RamazonAccuracy.EffectiveMultiplier(Find.CurrentMap, st):0.00}× market value");
             else
             {
                 Widgets.Label(new Rect(infoInner.x, infoInner.y, infoInner.width, 22f), $"Fee: {st.sellTaxPercent:0}%");
@@ -379,8 +392,26 @@ namespace Ramazon
             GUI.color = Color.white; Text.Font = GameFont.Small;
 
             var priceRect = new Rect(iconRect.xMax + 8, cell.y + 48, cell.width - 76, 20);
-            var cost = Math.Ceiling(def.BaseMarketValue * st.priceMultiplier);
-            Widgets.Label(priceRect, $"MV: {def.BaseMarketValue:0.##} -> {FormatNumber((long)cost)}");
+            var cost = Math.Ceiling(def.BaseMarketValue * RamazonAccuracy.EffectiveMultiplier(Find.CurrentMap, st));
+            if (RamazonAccuracy.IsRestricted(Find.CurrentMap, def, out string lockReason))
+            {
+                GUI.color = new Color(0.85f, 0.25f, 0.25f);
+                Widgets.Label(priceRect, "FORA DE ALCANCE");
+                TooltipHandler.TipRegion(priceRect, lockReason + "\n\nInstale um archolink Ramazon em um colono.");
+                GUI.color = Color.white;
+            }
+            else if (RamazonAccuracy.PriceIsHidden(Find.CurrentMap, def))
+            {
+                // Sem archolink parte do catalogo vem sem cotacao: compra as cegas.
+                GUI.color = new Color(1f, 0.55f, 0.2f);
+                Widgets.Label(priceRect, $"MV: {def.BaseMarketValue:0.##} -> ???");
+                TooltipHandler.TipRegion(priceRect, "A rede nao retornou a cotacao deste item. Sem um colono com archolink Ramazon voce compra as cegas.");
+                GUI.color = Color.white;
+            }
+            else
+            {
+                Widgets.Label(priceRect, $"MV: {def.BaseMarketValue:0.##} -> {FormatNumber((long)cost)}");
+            }
             Widgets.InfoCardButton(cell.x + 8f, cell.yMax - 54f, def);
 
             var btnRect = new Rect(cell.xMax - 90, cell.yMax - 30, 82, 26);
@@ -428,7 +459,7 @@ namespace Ramazon
             TooltipHandler.TipRegion(cell, sellItemName + (!string.IsNullOrEmpty(def.description) ? "\n\n" + def.description : ""));
 
             float unitMV = GetSellUnitMV(def);
-            float receivePct = (100f - st.sellTaxPercent) / 100f;
+            float receivePct = RamazonAccuracy.SellReceiveFactor(Find.CurrentMap, st);
 
             var stockRect = new Rect(iconRect.xMax + 8, cell.y + 28, cell.width - 100, 16);
             Text.Font = GameFont.Tiny; Widgets.Label(stockRect, $"Stock: {FormatNumber(have)}");
@@ -527,7 +558,7 @@ namespace Ramazon
             GUI.color = Color.white; Text.Font = GameFont.Small;
 
             var priceRect = new Rect(iconRect.xMax + 8, cell.y + 48, cell.width - 76, 20);
-            var cost = Math.Ceiling((kindDef.race?.BaseMarketValue ?? 0f) * st.priceMultiplier);
+            var cost = Math.Ceiling((kindDef.race?.BaseMarketValue ?? 0f) * RamazonAccuracy.EffectiveMultiplier(Find.CurrentMap, st));
             Widgets.Label(priceRect, $"MV: {kindDef.race?.BaseMarketValue:0.##} -> {FormatNumber((long)cost)}");
 
             if (kindDef.race != null) Widgets.InfoCardButton(cell.x + 8f, cell.yMax - 54f, kindDef.race);
@@ -595,16 +626,58 @@ namespace Ramazon
             }
             Text.Font = GameFont.Small;
 
-            var listRect = new Rect(inner.x, inner.y + 36f, inner.width, inner.height - 190f);
+            // ---------- STATUS DO PORTAL (obrigatorio p/ qualquer entrega) ----------
+            var dropRow = new Rect(inner.x, inner.y + 36f, inner.width, 26f);
+            bool hasPortal = RamazonDrop.IsOnline(map);
+
+            Text.Anchor = TextAnchor.MiddleLeft;
+            if (hasPortal)
+            {
+                GUI.color = RamazonDrop.MarkerColor;
+                Widgets.Label(dropRow, RamazonDrop.StatusLabel(map));
+            }
+            else
+            {
+                GUI.color = Color.red;
+                Widgets.Label(dropRow, RamazonDrop.StatusLabel(map));
+                TooltipHandler.TipRegion(dropRow, RamazonDrop.NotReadyReason(map));
+            }
+            Text.Anchor = TextAnchor.UpperLeft;
+            GUI.color = Color.white;
+
+            // Linha do negociador (o portador do archolink).
+            var negRow = new Rect(inner.x, inner.y + 60f, inner.width, 22f);
+            var negLabel = RamazonAccuracy.NegotiatorLabel(map);
+            Text.Anchor = TextAnchor.MiddleLeft;
+            Text.Font = GameFont.Tiny;
+            if (negLabel != null)
+            {
+                GUI.color = new Color(0.55f, 0.85f, 1f);
+                Widgets.Label(negRow, negLabel);
+                TooltipHandler.TipRegion(negRow, "O portador do archolink negocia pela colonia: a estatistica de negociacao dele melhora o preco de compra e de venda.");
+            }
+            else
+            {
+                GUI.color = Color.gray;
+                Widgets.Label(negRow, "Sem negociador (nenhum archolink instalado)");
+                TooltipHandler.TipRegion(negRow, "Instale um archolink Ramazon em um colono: ele passa a negociar, melhorando os precos.");
+            }
+            Text.Font = GameFont.Small;
+            Text.Anchor = TextAnchor.UpperLeft;
+            GUI.color = Color.white;
+
+            var listRect = new Rect(inner.x, inner.y + 86f, inner.width, inner.height - 240f);
 
             // Pre-calc subtotal including animal cart
             double subtotalMV = 0;
             foreach (var kv in cart)
             {
                 float mv = (mode == ShopMode.Sell)
-                    ? GetSellUnitMV(kv.Key)
+                    ? 0f  // venda usa valor real por instancia (abaixo)
                     : Math.Max(0f, kv.Key.BaseMarketValue);
-                subtotalMV += (double)mv * kv.Value;
+                subtotalMV += (mode == ShopMode.Sell)
+                    ? RealSellValue(map, kv.Key, kv.Value)   // material + qualidade + dano
+                    : (double)mv * kv.Value;
             }
             if (mode == ShopMode.Buy && st.allowAnimals)
                 foreach (var kv in animalCart)
@@ -785,9 +858,9 @@ namespace Ramazon
 
             if (mode == ShopMode.Buy)
             {
-                double totalSilver = Math.Ceiling(subtotalMV * st.priceMultiplier);
+                double totalSilver = Math.Ceiling(subtotalMV * RamazonAccuracy.EffectiveMultiplier(map, st));
                 Widgets.Label(new Rect(summaryInner.x, summaryInner.y, summaryInner.width, 22), $"Subtotal MV: {FormatNumber((long)subtotalMV)}");
-                Widgets.Label(new Rect(summaryInner.x, summaryInner.y + 24, summaryInner.width, 22), $"Multiplier: {st.priceMultiplier:0.00}x");
+                Widgets.Label(new Rect(summaryInner.x, summaryInner.y + 24, summaryInner.width, 22), $"Multiplier: {RamazonAccuracy.EffectiveMultiplier(map, st):0.00}x");
 
                 Text.Font = GameFont.Medium;
                 GUI.color = totalSilver <= silver ? Color.green : Color.red;
@@ -800,6 +873,8 @@ namespace Ramazon
 
                 string reason2 = null;
                 bool canCheckout = (cart.Count > 0 || animalCart.Count > 0) && totalSilver <= silver && AllCartItemsBuyable(st, out reason2);
+                // Sem portal construido nao ha por onde entregar.
+                if (canCheckout && !RamazonDrop.IsOnline(map)) { canCheckout = false; reason2 = RamazonDrop.NotReadyReason(map); }
                 var buyBtnRect = new Rect(summaryInner.x, summaryInner.y + 108, summaryInner.width, 26);
                 GUI.color = canCheckout ? BuyModeColor : Color.gray; Text.Font = GameFont.Medium;
 
@@ -812,7 +887,7 @@ namespace Ramazon
                         var dropSpot = DoSpawnCart(map, st);
                         if (hasAnimals)
                         {
-                            var animalSpot = DropCellFinder.TradeDropSpot(map);
+                            var animalSpot = RamazonDrop.GetSpot(map);
                             var animalThings = new List<Thing>();
                             Gender? fixedGender = animalGenderFilter != Gender.None ? (Gender?)animalGenderFilter : null;
                             DevelopmentalStage stages = animalAgeFilter == 1
@@ -826,12 +901,10 @@ namespace Ramazon
                                     req.AllowedDevelopmentalStages = stages;
                                     animalThings.Add(PawnGenerator.GeneratePawn(req));
                                 }
-                            DropPodUtility.DropThingsNear(animalSpot, map, animalThings, 110, false, false, true);
+                            RamazonDrop.Deliver(map, animalThings);
                         }
                         cart.Clear(); cartQtyBuf.Clear(); animalCart.Clear();
-                        string msg = hasAnimals
-                            ? $"Purchase complete! Paid {FormatNumber((long)totalSilver)} silver. Drop pods incoming!"
-                            : $"Purchase completed! Paid {FormatNumber((long)totalSilver)} silver. A drop pod is incoming!";
+                        string msg = $"Purchase completed! Paid {FormatNumber((long)totalSilver)} silver. Delivered through the portal!";
                         Messages.Message(msg, new LookTargets(new TargetInfo(dropSpot, map)), MessageTypeDefOf.PositiveEvent, false);
                         SoundStarter.PlayOneShot(SoundDefOf.ExecuteTrade, SoundInfo.OnCamera());
                     }
@@ -841,10 +914,10 @@ namespace Ramazon
             }
             else
             {
-                float receivePct = (100f - st.sellTaxPercent) / 100f;
+                float receivePct = RamazonAccuracy.SellReceiveFactor(Find.CurrentMap, st);
                 double totalGain = Math.Floor(subtotalMV * receivePct);
                 Widgets.Label(new Rect(summaryInner.x, summaryInner.y, summaryInner.width, 22), $"Subtotal MV: {FormatNumber((long)subtotalMV)}");
-                Widgets.Label(new Rect(summaryInner.x, summaryInner.y + 24, summaryInner.width, 22), $"Fee: {st.sellTaxPercent:0}% • You get: {(receivePct * 100f):0}%");
+                Widgets.Label(new Rect(summaryInner.x, summaryInner.y + 24, summaryInner.width, 22), $"Fee: {st.sellTaxPercent:0}% • You get: {(receivePct * 100f):0}%" + (RamazonAccuracy.NegotiatorLabel(map) != null ? "" : ""));
 
                 Text.Font = GameFont.Medium; GUI.color = Color.yellow;
                 Widgets.Label(new Rect(summaryInner.x, summaryInner.y + 50, summaryInner.width, 28), $"Payout: {FormatNumber((long)totalGain)}");
@@ -855,20 +928,24 @@ namespace Ramazon
                 else { GUI.color = Color.red; Widgets.Label(new Rect(summaryInner.x, summaryInner.y + 82, summaryInner.width, 22), "Cart exceeds available stock"); }
                 GUI.color = Color.white;
 
-                bool canSell = cart.Count > 0 && stockOk;
+                bool portalOk = RamazonDrop.IsOnline(map);
+                bool canSell = cart.Count > 0 && stockOk && portalOk;
                 var sellBtnRect = new Rect(summaryInner.x, summaryInner.y + 108, summaryInner.width, 26);
                 GUI.color = canSell ? SellModeColor : Color.gray; Text.Font = GameFont.Medium;
 
                 if (Widgets.ButtonText(sellBtnRect, "SELL NOW"))
                 {
-                    if (!canSell) { Messages.Message("Cannot sell - check stock availability.", MessageTypeDefOf.RejectInput, false); SoundStarter.PlayOneShot(SoundDefOf.ClickReject, SoundInfo.OnCamera()); }
+                    if (!canSell) { Messages.Message(portalOk ? "Cannot sell - check stock availability." : RamazonDrop.NotReadyReason(map), MessageTypeDefOf.RejectInput, false); SoundStarter.PlayOneShot(SoundDefOf.ClickReject, SoundInfo.OnCamera()); }
                     else
                     {
-                        RemoveSoldItemsFromMap(map);
+                        // Paga pelo valor REAL do que saiu (material/qualidade/dano),
+                        // nao pela estimativa baseada no def.
+                        float soldValue = RemoveSoldItemsFromMap(map);
+                        totalGain = Math.Floor(soldValue * receivePct);
                         var silverSpot = GiveSilver(map, (int)totalGain);
                         cart.Clear(); cartQtyBuf.Clear();
                         sellableCounts = ComputeSellableCounts(map);
-                        Messages.Message($"Sale completed! A drop pod with {FormatNumber((long)totalGain)} silver is incoming!", new LookTargets(new TargetInfo(silverSpot, map)), MessageTypeDefOf.PositiveEvent, false);
+                        Messages.Message($"Sale completed! {FormatNumber((long)totalGain)} silver delivered through the portal!", new LookTargets(new TargetInfo(silverSpot, map)), MessageTypeDefOf.PositiveEvent, false);
                         SoundStarter.PlayOneShot(SoundDefOf.ExecuteTrade, SoundInfo.OnCamera());
                     }
                 }
@@ -1013,6 +1090,7 @@ namespace Ramazon
             if (typeof(Pawn).IsAssignableFrom(def.thingClass) || def.IsCorpse) { reason = "Cannot buy pawns/corpses."; return false; }
             if (def.BaseMarketValue <= 0f) { reason = "Item has zero market value."; return false; }
             if (def.MadeFromStuff && !st.showStuffables) { reason = "Stuffable item disabled (enable in settings)."; return false; }
+            if (RamazonAccuracy.IsRestricted(Find.CurrentMap, def, out string locked)) { reason = locked; return false; }
             return true;
         }
 
@@ -1040,7 +1118,7 @@ namespace Ramazon
 
         private IntVec3 DoSpawnCart(Map map, RamazonSettings st)
         {
-            var spot = DropCellFinder.TradeDropSpot(map);
+            var spot = RamazonDrop.GetSpot(map);
             var things = new List<Thing>();
 
             foreach (var kv in cart)
@@ -1076,18 +1154,73 @@ namespace Ramazon
                 }
             }
 
-            DropPodUtility.DropThingsNear(spot, map, things, 110, false, false, true);
+            RamazonDrop.Deliver(map, things);
             return spot;
         }
 
         private const string WastepackDefName = "Wastepack";
         private const float WastepackUnitPrice = 5f;
 
-        private static float GetSellUnitMV(ThingDef def)
+        /// <summary>
+        /// Valor real de UMA unidade deste item concreto: considera material (stuff),
+        /// qualidade e dano - igual a uma caravana. def.BaseMarketValue ignora tudo isso.
+        /// </summary>
+        private static float UnitValue(Thing t)
         {
-            if (def == null) return 0f;
-            if (def.defName == WastepackDefName) return WastepackUnitPrice;
-            return Math.Max(0f, def.BaseMarketValue);
+            if (t?.def == null) return 0f;
+            if (t.def.defName == WastepackDefName) return WastepackUnitPrice;
+
+            // Configuravel: valor real da instancia vs valor base do tipo (modo antigo).
+            if (ModEntry.Settings != null && !ModEntry.Settings.useRealItemValue)
+                return Math.Max(0f, t.def.BaseMarketValue);
+
+            return Math.Max(0f, t.MarketValue);
+        }
+
+        /// <summary>
+        /// Pilhas vendaveis deste def. Com valor real ligado, vai da MAIS BARATA pra
+        /// mais cara (preserva o equipamento bom); desligado, mantem a ordem antiga
+        /// (pilhas maiores primeiro).
+        /// </summary>
+        private static List<Thing> SellableStacks(Map map, ThingDef def)
+        {
+            if (map?.listerThings == null || def == null) return new List<Thing>();
+
+            var q = map.listerThings.ThingsOfDef(def)
+                .Where(t => t != null && t.Spawned && !t.Position.Fogged(map));
+
+            bool real = ModEntry.Settings == null || ModEntry.Settings.useRealItemValue;
+            return (real ? q.OrderBy(t => UnitValue(t)) : q.OrderByDescending(t => t.stackCount))
+                .ToList();
+        }
+
+        /// <summary>
+        /// Valor real das 'count' unidades mais baratas deste def no mapa.
+        /// Vender do mais barato primeiro preserva o equipamento bom do jogador.
+        /// </summary>
+        private static float RealSellValue(Map map, ThingDef def, int count)
+        {
+            if (count <= 0) return 0f;
+            float total = 0f;
+            int need = count;
+            foreach (var t in SellableStacks(map, def))
+            {
+                if (need <= 0) break;
+                int take = Math.Min(need, t.stackCount);
+                total += UnitValue(t) * take;
+                need -= take;
+            }
+            return total;
+        }
+
+        /// <summary>Valor unitario medio real (pro card do catalogo).</summary>
+        private float GetSellUnitMV(ThingDef def)
+        {
+            var map = Find.CurrentMap;
+            if (map == null || def == null) return 0f;
+            var stacks = SellableStacks(map, def);
+            if (stacks.Count == 0) return Math.Max(0f, def?.BaseMarketValue ?? 0f);
+            return UnitValue(stacks[0]);
         }
 
         private static bool IsSellableSpecial(ThingDef def)
@@ -1133,32 +1266,37 @@ namespace Ramazon
             return true;
         }
 
-        private void RemoveSoldItemsFromMap(Map map)
+        /// <summary>
+        /// Remove os itens vendidos e devolve o valor REAL do que saiu.
+        /// Usa a mesma ordem (mais barato primeiro) do calculo do subtotal,
+        /// entao a estimativa mostrada bate com o que e pago.
+        /// </summary>
+        private float RemoveSoldItemsFromMap(Map map)
         {
+            float realValue = 0f;
+
             foreach (var kv in cart)
             {
                 var def = kv.Key;
                 int need = kv.Value;
                 if (need <= 0) continue;
 
-                var stacks = map.listerThings.ThingsOfDef(def)
-                    .Where(t => t.Spawned && !t.Position.Fogged(map))
-                    .OrderByDescending(t => t.stackCount)
-                    .ToList();
-
-                foreach (var t in stacks)
+                foreach (var t in SellableStacks(map, def))
                 {
                     if (need <= 0) break;
                     int take = Math.Min(need, t.stackCount);
+                    realValue += UnitValue(t) * take;
                     t.SplitOff(take).Destroy(DestroyMode.Vanish);
                     need -= take;
                 }
             }
+
+            return realValue;
         }
 
         private IntVec3 GiveSilver(Map map, int amount)
         {
-            var spot = DropCellFinder.TradeDropSpot(map);
+            var spot = RamazonDrop.GetSpot(map);
             if (amount <= 0) return spot;
 
             var things = new List<Thing>();
@@ -1173,7 +1311,7 @@ namespace Ramazon
                 left -= make;
             }
 
-            DropPodUtility.DropThingsNear(spot, map, things, 110, false, false, true);
+            RamazonDrop.Deliver(map, things);
             return spot;
         }
 

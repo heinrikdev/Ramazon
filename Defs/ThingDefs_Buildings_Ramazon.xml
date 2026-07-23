@@ -1,0 +1,89 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<Defs>
+
+  <ThingDef ParentName="BuildingBase">
+    <defName>Ramazon_Portal</defName>
+    <label>portal Ramazon</label>
+    <description>Um portal de entrega da rede Ramazon. Tudo que voce comprar (itens, animais) e a prata das vendas materializa na frente dele.\n\nO portal queima OURO para manter a ligacao aberta: abastecido, ele fica aceso e operante; sem ouro, apaga e a rede fica offline.\n\nConstrui-lo exige um nucleo de personalidade de IA: a rede precisa de uma mente para negociar do outro lado. Pode ser desmontado e reinstalado em outro lugar.</description>
+    <thingClass>Ramazon.Building_RamazonPortal</thingClass>
+
+    <graphicData>
+      <texPath>Ramazon/PortalOff</texPath>
+      <graphicClass>Graphic_Single</graphicClass>
+      <drawSize>(3,3)</drawSize>
+      <shaderType>Transparent</shaderType>
+    </graphicData>
+
+    <size>(3,3)</size>
+    <altitudeLayer>Building</altitudeLayer>
+    <passability>Impassable</passability>
+    <fillPercent>0.6</fillPercent>
+    <blockWind>true</blockWind>
+    <blockLight>false</blockLight>
+    <castEdgeShadows>false</castEdgeShadows>
+    <rotatable>false</rotatable>
+    <selectable>true</selectable>
+    <canOverlapZones>false</canOverlapZones>
+
+    <!-- desmontavel: pode ser reinstalado em outro lugar -->
+    <minifiedDef>MinifiedThing</minifiedDef>
+    <thingCategories>
+      <li>BuildingsSpecial</li>
+    </thingCategories>
+
+    <hasInteractionCell>true</hasInteractionCell>
+    <interactionCellOffset>(0,0,-2)</interactionCellOffset>
+
+    <statBases>
+      <MaxHitPoints>350</MaxHitPoints>
+      <WorkToBuild>6000</WorkToBuild>
+      <Flammability>0</Flammability>
+      <Beauty>10</Beauty>
+      <Mass>60</Mass>
+    </statBases>
+
+    <costList>
+      <AIPersonaCore>1</AIPersonaCore>
+      <ComponentSpacer>8</ComponentSpacer>
+      <Plasteel>150</Plasteel>
+      <Gold>100</Gold>
+    </costList>
+
+    <researchPrerequisites>
+      <li>Fabrication</li>
+    </researchPrerequisites>
+
+    <comps>
+      <!-- OURO como combustivel: mantem a ligacao aberta -->
+      <li Class="CompProperties_Refuelable">
+        <fuelLabel>Ouro</fuelLabel>
+        <fuelGizmoLabel>Ouro no portal</fuelGizmoLabel>
+        <fuelFilter>
+          <thingDefs>
+            <li>Gold</li>
+          </thingDefs>
+        </fuelFilter>
+        <fuelCapacity>60</fuelCapacity>
+        <fuelConsumptionRate>8.0</fuelConsumptionRate>
+        <initialFuelPercent>0</initialFuelPercent>
+        <destroyOnNoFuel>false</destroyOnNoFuel>
+        <consumeFuelOnlyWhenUsed>false</consumeFuelOnlyWhenUsed>
+        <showAllowAutoRefuelToggle>true</showAllowAutoRefuelToggle>
+        <outOfFuelMessage>Sem ouro: a rede Ramazon esta offline</outOfFuelMessage>
+        <fuelIconPath>Things/Item/Resource/Gold</fuelIconPath>
+      </li>
+    </comps>
+
+    <designationCategory>Production</designationCategory>
+    <uiIconPath>Ramazon/PortalOn</uiIconPath>
+
+    <building>
+      <isEdifice>true</isEdifice>
+      <ai_chillDestination>false</ai_chillDestination>
+    </building>
+
+    <terrainAffordanceNeeded>Heavy</terrainAffordanceNeeded>
+    <constructEffect>ConstructMetal</constructEffect>
+  </ThingDef>
+
+</Defs>
